@@ -84,16 +84,10 @@ void get_d20(int fd)
     int num = rand() % 21;
     char string[56];
     sprintf(string, "%d", num);
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
 
     // Use send_response() to send it back as text/plain data
     printf("d20 random number: %d\n", num);
     send_response(fd, "HTTP/1.1 200 OK", "text/plain", string, sizeof(string));
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
 }
 
 /**
@@ -128,9 +122,27 @@ void resp_404(int fd)
  */
 void get_file(int fd, struct cache *cache, char *request_path)
 {
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    char filepath[4096];
+    struct file_data *filedata;
+    char *mime_type;
+
+    char path[500];
+    sprintf(path, "%s", "./serverroot");
+    strcat(path, request_path);
+    // Fetch the 404.html file
+    snprintf(filepath, sizeof filepath, path, SERVER_ROOT);
+    filedata = file_load(filepath);
+
+    if (filedata == NULL)
+    {
+        // TODO: make this non-fatal
+        fprintf(stderr, "cannot find file\n");
+        exit(3);
+    }
+
+    mime_type = mime_type_get(filepath);
+
+    send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
 }
 
 /**
@@ -178,6 +190,10 @@ void handle_http_request(int fd, struct cache *cache)
         if (strcmp(path, "/d20") == 0)
         {
             get_d20(fd);
+        }
+        else
+        {
+            get_file(fd, cache, path);
         }
     }
     else if (strcmp(method, "POST") == 0)
