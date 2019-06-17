@@ -81,13 +81,16 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 void get_d20(int fd)
 {
     // Generate a random number between 1 and 20 inclusive
-
+    int num = rand() % 21;
+    char string[56];
+    sprintf(string, "%d", num);
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
 
     // Use send_response() to send it back as text/plain data
-
+    printf("d20 random number: %d\n", num);
+    send_response(fd, "HTTP/1.1 200 OK", "text/plain", string, sizeof(string));
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
@@ -170,15 +173,11 @@ void handle_http_request(int fd, struct cache *cache)
     sscanf(request, "%s %s", method, path);
 
     // If GET, handle the get endpoints
-    if (strcmp(method, "GET\n") == 0)
+    if (strcmp(method, "GET") == 0)
     {
         if (strcmp(path, "/d20") == 0)
         {
             get_d20(fd);
-        }
-        else
-        {
-            get_file(fd, cache, path);
         }
     }
     else if (strcmp(method, "POST") == 0)
@@ -230,7 +229,7 @@ int main(void)
         // makes a new connection:
         newfd = accept(listenfd, (struct sockaddr *)&their_addr, &sin_size);
         // TESTING SEND RESPONSE
-        resp_404(newfd);
+        // resp_404(newfd);
         // END TESTING
         if (newfd == -1)
         {
