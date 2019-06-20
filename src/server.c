@@ -137,12 +137,14 @@ void get_file(int fd, struct cache *cache, char *request_path)
     {
         // TODO: make this non-fatal
         fprintf(stderr, "cannot find file\n");
-        exit(3);
+        resp_404(fd);
+        return;
     }
 
     mime_type = mime_type_get(filepath);
-
+    cache_put(cache, request_path, mime_type, filedata->data, filedata->size);
     send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
+    file_free(filedata);
 }
 
 /**
@@ -174,11 +176,6 @@ void handle_http_request(int fd, struct cache *cache)
         perror("recv");
         return;
     }
-
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
-
     char method[200];
     char path[8192];
     // Read the first two components of the first line of the request
@@ -193,12 +190,16 @@ void handle_http_request(int fd, struct cache *cache)
         }
         else
         {
-            get_file(fd, cache, path);
+            struct cache_entry *entry = cache_get(cache, path);
+            if (entry)
+            {
+                send_response(fd, "HTTP/1.1 200 OK", entry->content_type, entry->content, entry->content_length);
+            }
+            else
+            {
+                get_file(fd, cache, path);
+            }
         }
-    }
-    else if (strcmp(method, "POST") == 0)
-    {
-        return;
     }
     else
     {
